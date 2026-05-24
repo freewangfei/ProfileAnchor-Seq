@@ -2,10 +2,6 @@
 
 ProfileAnchor-Seq is a source-only cross-well lithofacies identification pipeline for well-log interpretation. It trains on labelled source wells, predicts complete lithofacies profiles in target wells, and ranks target intervals for coverage-controlled automatic release without using target-well labels during fitting, inference, or release selection.
 
-This repository contains the runnable method, reproduced comparison algorithms, data preparation scripts, training entry points, testing entry points, and diagnostic plotting code.
-
-Public repository: https://github.com/freewangfei/ProfileAnchor-Seq
-
 The code supports:
 
 - FORCE 2020 complete-well spatial evaluation.
@@ -44,7 +40,7 @@ Use the project conda environment:
 
 ```bash
 source $(conda info --base)/etc/profile.d/conda.sh
-conda activate yolo
+conda activate your_env
 ```
 
 Install the Python dependencies with:
@@ -288,7 +284,9 @@ figshare_test_release_curves.pdf
 figshare_test_release_curves.png
 ```
 
-## Minimal Checks
+## Correctness Checks
+
+Run the checks below after installation. They verify that the Python modules compile, imports resolve, saved result summaries are readable, and diagnostic figures can be generated from the packaged example outputs.
 
 Check imports and syntax:
 
@@ -301,3 +299,5 @@ Check figure generation:
 ```bash
 python test.py --plot-only
 ```
+
+For full numerical reproduction, download the datasets listed above and run the training and comparison commands with the stated well-level splits, seeds, and accepted coverages.
