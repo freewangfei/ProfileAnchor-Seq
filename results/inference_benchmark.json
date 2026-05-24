@@ -1,0 +1,43 @@
+{
+  "environment": {
+    "python": "3.12.12",
+    "platform": "Linux-6.8.0-111-generic-x86_64-with-glibc2.35",
+    "processor": "x86_64",
+    "numpy": "1.26.4"
+  },
+  "benchmark": [
+    {
+      "target_intervals": 5000,
+      "classes": 12,
+      "anchor_models": 5,
+      "coverage": 0.05,
+      "repeats": 5,
+      "mean_seconds": 0.021979180403286593,
+      "std_seconds": 0.000206764320999968,
+      "intervals_per_second": 227488.00948248006,
+      "accepted_intervals": 250
+    },
+    {
+      "target_intervals": 20000,
+      "classes": 12,
+      "anchor_models": 5,
+      "coverage": 0.05,
+      "repeats": 5,
+      "mean_seconds": 0.08977990620187484,
+      "std_seconds": 0.00020453050588460634,
+      "intervals_per_second": 222766.9959359163,
+      "accepted_intervals": 1000
+    },
+    {
+      "target_intervals": 50000,
+      "classes": 12,
+      "anchor_models": 5,
+      "coverage": 0.05,
+      "repeats": 5,
+      "mean_seconds": 0.22835174259962515,
+      "std_seconds": 0.0002655058512831538,
+      "intervals_per_second": 218960.4486078578,
+      "accepted_intervals": 2500
+    }
+  ]
+}
