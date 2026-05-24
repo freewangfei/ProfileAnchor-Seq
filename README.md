@@ -30,6 +30,10 @@ The method can also be inspected along well tracks. Accepted intervals concentra
 
 ![Target-well lithofacies profiles](readme_assets/fig7.png)
 
+Cross-well transfer diagnostics align target wells, release accuracy, profile-anchored scores, and spatial distance to the nearest source well.
+
+![Cross-well transfer diagnostics](readme_assets/fig8.png)
+
 External validation uses the Figshare cross-well lithology dataset with a different log suite and label dictionary.
 
 ![Figshare release curves](readme_assets/fig9.png)
