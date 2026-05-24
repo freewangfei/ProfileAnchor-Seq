@@ -18,21 +18,21 @@ The code supports:
 
 ProfileAnchor-Seq first predicts a complete lithofacies profile for every target well. It then ranks intervals for automatic release using only source-trained evidence: spatial tree support, local sequence response, heterogeneous profile-anchor agreement, and within-well reliability ranking.
 
-![ProfileAnchor method overview](readme_assets/fig1.pdf)
+![ProfileAnchor method overview](readme_assets/fig1.png)
 
 ## Diagnostic Examples
 
 The main output is a complete lithofacies prediction and a coverage-controlled automatic-release subset. The curves below show how accepted accuracy and weighted F1 change as more target-well intervals are released.
 
-![FORCE release curves](readme_assets/fig6.pdf)
+![FORCE release curves](readme_assets/fig6.png)
 
 The method can also be inspected along well tracks. Accepted intervals concentrate in stable parts of target wells while uncertain transitions remain available for review.
 
-![Target-well lithofacies profiles](readme_assets/fig7.pdf)
+![Target-well lithofacies profiles](readme_assets/fig7.png)
 
 External validation uses the Figshare cross-well lithology dataset with a different log suite and label dictionary.
 
-![Figshare release curves](readme_assets/fig9.pdf)
+![Figshare release curves](readme_assets/fig9.png)
 
 ## Installation
 
