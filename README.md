@@ -4,6 +4,8 @@ ProfileAnchor-Seq is a source-only cross-well lithofacies identification pipelin
 
 This repository contains the runnable method, reproduced comparison algorithms, data preparation scripts, training entry points, testing entry points, and diagnostic plotting code.
 
+Public repository: https://github.com/freewangfei/ProfileAnchor-Seq
+
 The code supports:
 
 - FORCE 2020 complete-well spatial evaluation.
