@@ -80,6 +80,7 @@ profile_anchor_code/
 - `spatial_lithofacies_stnet_view_fusion.py`: STNet-style view-fusion baseline.
 - `spatial_lithofacies_tree_stnet_posterior_fusion.py`: tree and STNet posterior-fusion baseline.
 - `spatial_tree_smote_aligned_lithofacies.py`: SMOTE-aligned tree baseline.
+- `recent_lithology_baselines.py`: comparable recent lithology baselines for ATT-CNN, recurrent Transformer, and DDPM-MSCNN-style models under the same complete-well FORCE protocol.
 
 `data/` contains dataset preparation, schema checks, FORCE loading, and well-level split utilities.
 
@@ -240,6 +241,38 @@ python model/spatial_lithofacies_stnet_view_fusion.py \
 
 For a quick smoke run, reduce the seed list to `--seeds 0 1 2`. The reported comparisons use the 11-seed complete-well protocol shown above.
 
+Recent lithology baselines from the 2024--2026 literature are reproduced as comparable source-only implementations on the same FORCE complete-well splits. These commands do not import cross-paper metrics; they train each method family on the same source wells and rank target intervals by posterior margin at the same accepted coverages.
+
+Attention CNN baseline:
+
+```bash
+python model/recent_lithology_baselines.py \
+  --model att_cnn \
+  --data-dir datasets/force2020 \
+  --seeds 0 1 2 3 4 5 6 7 8 9 42 \
+  --coverages 0.01 0.02 0.03 0.05 0.08 0.10 0.20 0.30 0.40 0.50
+```
+
+Recurrent Transformer baseline:
+
+```bash
+python model/recent_lithology_baselines.py \
+  --model recurrent_transformer \
+  --data-dir datasets/force2020 \
+  --seeds 0 1 2 3 4 5 6 7 8 9 42 \
+  --coverages 0.01 0.02 0.03 0.05 0.08 0.10 0.20 0.30 0.40 0.50
+```
+
+Diffusion-augmented multiscale CNN baseline:
+
+```bash
+python model/recent_lithology_baselines.py \
+  --model ddpm_mscnn \
+  --data-dir datasets/force2020 \
+  --seeds 0 1 2 3 4 5 6 7 8 9 42 \
+  --coverages 0.01 0.02 0.03 0.05 0.08 0.10 0.20 0.30 0.40 0.50
+```
+
 Figshare structural baselines:
 
 ```bash
@@ -298,6 +331,12 @@ Check figure generation:
 
 ```bash
 python test.py --plot-only
+```
+
+Check the recent-baseline model definitions without downloading FORCE:
+
+```bash
+python model/recent_lithology_baselines.py --self-check
 ```
 
 For full numerical reproduction, download the datasets listed above and run the training and comparison commands with the stated well-level splits, seeds, and accepted coverages.
