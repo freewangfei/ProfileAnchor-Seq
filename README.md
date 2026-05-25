@@ -339,4 +339,17 @@ Check the recent-baseline model definitions without downloading FORCE:
 python model/recent_lithology_baselines.py --self-check
 ```
 
+Check the inference benchmark on a small synthetic case without overwriting packaged benchmark files:
+
+```bash
+python util/benchmark_inference.py \
+  --intervals 1000 2000 \
+  --classes 12 \
+  --anchors 5 \
+  --coverage 0.05 \
+  --repeats 2 \
+  --out-json test_figures/inference_benchmark_smoke.json \
+  --out-csv test_figures/inference_benchmark_smoke.csv
+```
+
 For full numerical reproduction, download the datasets listed above and run the training and comparison commands with the stated well-level splits, seeds, and accepted coverages.
