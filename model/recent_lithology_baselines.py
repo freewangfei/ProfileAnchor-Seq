@@ -87,6 +87,23 @@ class WindowDataset(Dataset):
         return torch.from_numpy(seq), torch.from_numpy(point), torch.tensor(self.labels[center], dtype=torch.long)
 
 
+class TensorWindowDataset(Dataset):
+    def __init__(self, seq: np.ndarray, point: np.ndarray, labels: np.ndarray):
+        self.seq = seq.astype(np.float32, copy=False)
+        self.point = point.astype(np.float32, copy=False)
+        self.labels = labels.astype(np.int64, copy=False)
+
+    def __len__(self):
+        return len(self.labels)
+
+    def __getitem__(self, idx):
+        return (
+            torch.from_numpy(self.seq[idx]),
+            torch.from_numpy(self.point[idx]),
+            torch.tensor(self.labels[idx], dtype=torch.long),
+        )
+
+
 class AttentionCNN(nn.Module):
     def __init__(self, seq_dim: int, point_dim: int, n_classes: int, hidden: int, dropout: float):
         super().__init__()
@@ -175,7 +192,10 @@ def class_weights(labels: np.ndarray, n_classes: int, power: float) -> torch.Ten
 
 def sampler(dataset: WindowDataset, labels: np.ndarray, n_classes: int, power: float, seed: int) -> WeightedRandomSampler:
     weights = class_weights(labels, n_classes, power).numpy()
-    sample_weights = np.array([weights[int(labels[center])] for _, center in dataset.samples], dtype=np.float64)
+    if hasattr(dataset, "samples"):
+        sample_weights = np.array([weights[int(labels[center])] for _, center in dataset.samples], dtype=np.float64)
+    else:
+        sample_weights = np.array([weights[int(label)] for label in labels], dtype=np.float64)
     generator = torch.Generator()
     generator.manual_seed(seed)
     return WeightedRandomSampler(sample_weights, len(sample_weights), replacement=True, generator=generator)
@@ -191,11 +211,12 @@ def make_model(name: str, seq_dim: int, point_dim: int, n_classes: int, args):
     raise ValueError(f"Unknown recent baseline: {name}")
 
 
-def train_denoiser(seq_train: np.ndarray, args, device: torch.device) -> DiffusionDenoiser:
-    dim = seq_train.shape[1]
+def train_denoiser(seq_windows: np.ndarray, args, device: torch.device) -> DiffusionDenoiser:
+    flat = seq_windows.reshape(seq_windows.shape[0], -1)
+    dim = flat.shape[1]
     denoiser = DiffusionDenoiser(dim, args.hidden, args.noise_levels).to(device)
     opt = torch.optim.AdamW(denoiser.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    data = torch.tensor(seq_train, dtype=torch.float32)
+    data = torch.tensor(flat, dtype=torch.float32)
     loader = DataLoader(data, batch_size=args.batch_size, shuffle=True, generator=torch.Generator().manual_seed(args.seed_for_loader))
     betas = torch.linspace(args.noise_min, args.noise_max, args.noise_levels, device=device)
     denoiser.train()
@@ -212,13 +233,25 @@ def train_denoiser(seq_train: np.ndarray, args, device: torch.device) -> Diffusi
     return denoiser
 
 
-def augment_minority(seq_train: np.ndarray, point_train: np.ndarray, labels: np.ndarray, args, device: torch.device):
+def materialize_windows(dataset: WindowDataset) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    seq_rows = []
+    point_rows = []
+    label_rows = []
+    for idx in range(len(dataset)):
+        seq, point, label = dataset[idx]
+        seq_rows.append(seq.numpy())
+        point_rows.append(point.numpy())
+        label_rows.append(int(label))
+    return np.stack(seq_rows), np.stack(point_rows), np.asarray(label_rows, dtype=np.int64)
+
+
+def augment_minority(seq_windows: np.ndarray, point_train: np.ndarray, labels: np.ndarray, args, device: torch.device):
     if args.diffusion_ratio <= 0:
-        return seq_train, point_train, labels
+        return seq_windows, point_train, labels
     counts = np.bincount(labels)
     target = int(np.quantile(counts[counts > 0], args.diffusion_target_quantile))
-    denoiser = train_denoiser(seq_train, args, device)
-    rows_seq, rows_point, rows_y = [seq_train], [point_train], [labels]
+    denoiser = train_denoiser(seq_windows, args, device)
+    rows_seq, rows_point, rows_y = [seq_windows], [point_train], [labels]
     rng = np.random.default_rng(args.seed_for_loader)
     denoiser.eval()
     with torch.no_grad():
@@ -228,10 +261,11 @@ def augment_minority(seq_train: np.ndarray, point_train: np.ndarray, labels: np.
                 continue
             src = np.where(labels == cls)[0]
             pick = rng.choice(src, size=need, replace=True)
-            x = torch.tensor(seq_train[pick], dtype=torch.float32, device=device)
+            shape = seq_windows.shape[1:]
+            flat = torch.tensor(seq_windows[pick].reshape(need, -1), dtype=torch.float32, device=device)
             level = torch.full((need,), args.noise_levels - 1, dtype=torch.long, device=device)
-            noisy = x + torch.randn_like(x) * args.noise_max
-            seq_new = denoiser(noisy, level).cpu().numpy()
+            noisy = flat + torch.randn_like(flat) * args.noise_max
+            seq_new = denoiser(noisy, level).cpu().numpy().reshape((need, *shape))
             point_new = point_train[pick].copy()
             rows_seq.append(seq_new)
             rows_point.append(point_new)
@@ -300,12 +334,9 @@ def run_seed(seed: int, args) -> list[dict]:
     )
     model = make_model(args.model, len(seq_features), len(point_features), n_classes, args).to(device)
     if args.model == "ddpm_mscnn":
-        train_centers = np.array([center for _, center in train_dataset.samples], dtype=np.int64)
-        seq_aug, point_aug, labels_aug = augment_minority(seq_all[train_centers], point_all[train_centers], labels[train_centers], args, device)
-        aug_frame = pd.DataFrame({"WELL": "aug", "DEPTH_MD": np.arange(len(labels_aug))})
-        seq_all_train = seq_aug
-        point_all_train = point_aug
-        train_dataset = WindowDataset(aug_frame, seq_all_train, point_all_train, labels_aug, args.window)
+        seq_windows, point_windows, labels_aug_base = materialize_windows(train_dataset)
+        seq_aug, point_aug, labels_aug = augment_minority(seq_windows, point_windows, labels_aug_base, args, device)
+        train_dataset = TensorWindowDataset(seq_aug, point_aug, labels_aug)
         train_loader = DataLoader(
             train_dataset,
             batch_size=args.batch_size,
