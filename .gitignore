@@ -7,6 +7,7 @@ __pycache__/
 .DS_Store
 test_figures/
 test_figures_check/
+test_figures_smoke/
 datasets/
 data/raw/
 data/processed/

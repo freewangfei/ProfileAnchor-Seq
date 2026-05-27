@@ -1,53 +1,43 @@
-# ProfileAnchor-Seq Code
+# ProfileAnchor-Seq
 
-ProfileAnchor-Seq is a source-only cross-well lithofacies identification pipeline for well-log interpretation. It trains on labelled source wells, predicts complete lithofacies profiles in target wells, and ranks target intervals for coverage-controlled automatic release without using target-well labels during fitting, inference, or release selection.
+ProfileAnchor-Seq is a runnable cross-well lithofacies identification codebase for conventional well-log curves. It trains on labelled source wells, predicts complete target-well lithofacies profiles, ranks target intervals for coverage-controlled automatic release, and provides scripts for data preparation, training, testing, comparison runs, result checks, and diagnostic figures.
 
-The code supports:
+The repository contains:
 
-- FORCE 2020 complete-well spatial evaluation.
-- Figshare cross-well lithology validation.
-- External well-log CSV schema checks and source-only evaluation.
-- Reproduced tabular, sequence, spatial-temporal, graph-like, and frequency-style baselines.
-- Test figures that summarize release behavior from saved result files.
+- the ProfileAnchor-Seq method;
+- training and testing entry points;
+- FORCE 2020 and Figshare data preparation utilities;
+- comparison algorithm runners;
+- packaged result summaries for quick checks;
+- diagnostic plotting and inference benchmark utilities.
 
-## Method at a Glance
+中文说明见 [README_zh.md](README_zh.md).
 
-ProfileAnchor-Seq first predicts a complete lithofacies profile for every target well. It then ranks intervals for automatic release using only source-trained evidence: spatial tree support, local sequence response, heterogeneous profile-anchor agreement, and within-well reliability ranking.
+## What the Code Does
 
-![ProfileAnchor method overview](readme_assets/fig1.png)
+ProfileAnchor-Seq combines missing-aware spatial support, local sequence response, and heterogeneous profile-anchor agreement. The output contains a full target-well prediction and an accepted subset at the requested coverage.
 
-## Diagnostic Examples
+![Method overview](readme_assets/method_overview.png)
 
-The main output is a complete lithofacies prediction and a coverage-controlled automatic-release subset. The curves below show how accepted accuracy and weighted F1 change as more target-well intervals are released.
+The included images show the method workflow and example outputs from saved result files.
 
-![FORCE release curves](readme_assets/fig6.png)
+![FORCE release curves](readme_assets/force_release_curves.png)
 
-The method can also be inspected along well tracks. Accepted intervals concentrate in stable parts of target wells while uncertain transitions remain available for review.
+![Target-well profile tracks](readme_assets/well_profile_tracks.png)
 
-![Target-well lithofacies profiles](readme_assets/fig7.png)
+![Cross-well transfer diagnostics](readme_assets/transfer_diagnostics.png)
 
-Cross-well transfer diagnostics align target wells, release accuracy, profile-anchored scores, and spatial distance to the nearest source well.
+![Figshare release curves](readme_assets/figshare_release_curves.png)
 
-![Cross-well transfer diagnostics](readme_assets/fig8.png)
-
-External validation uses the Figshare cross-well lithology dataset with a different log suite and label dictionary.
-
-![Figshare release curves](readme_assets/fig9.png)
-
-## Installation
-
-Use the project conda environment:
+## Environment
 
 ```bash
 source $(conda info --base)/etc/profile.d/conda.sh
 conda activate your_env
-```
-
-Install the Python dependencies with:
-
-```bash
 pip install -r requirements.txt
 ```
+
+The code is CPU-compatible. Full 11-seed runs can take time; use fewer seeds for a quick check.
 
 ## Directory Layout
 
@@ -55,80 +45,55 @@ pip install -r requirements.txt
 profile_anchor_code/
   train.py
   test.py
+  verify_results.py
   model/
   data/
   util/
   results/
-  test_figures/
   readme_assets/
   requirements.txt
+  REPRODUCIBILITY.md
 ```
 
-`train.py` dispatches the FORCE, Figshare, or generic external training/evaluation workflow.
-
-`test.py` generates diagnostic release-curve figures from saved result summaries.
-
-`model/` contains the ProfileAnchor-Seq implementation and reproduced comparison runners.
-
-- `profile_anchor_reliability_geoshift_seq.py`: main FORCE ProfileAnchor-Seq runner.
-- `external_geoshift_rba_fixed_runner.py`: fixed source-only ProfileAnchor runner for Figshare-style external CSVs.
-- `external_reliability_budget_anchor_runner.py`: external runner with source-side release-policy selection.
-- `external_welllog_profile_anchor_runner.py`: generic external ProfileAnchor and baseline implementation.
-- `figshare_structural_external_baselines.py`: reproduced external structural baselines.
-- `spatial_lithofacies_selective_geoshift_seq.py`: tree-sequence selective baseline.
-- `spatial_lithofacies_stnet_like.py`: STNet-like sequence/spatial-temporal baseline.
-- `spatial_lithofacies_stnet_view_fusion.py`: STNet-style view-fusion baseline.
-- `spatial_lithofacies_tree_stnet_posterior_fusion.py`: tree and STNet posterior-fusion baseline.
-- `spatial_tree_smote_aligned_lithofacies.py`: SMOTE-aligned tree baseline.
-- `recent_lithology_baselines.py`: comparable recent lithology baselines for ATT-CNN, recurrent Transformer, and DDPM-MSCNN-style models under the same complete-well FORCE protocol.
-
-`data/` contains dataset preparation, schema checks, FORCE loading, and well-level split utilities.
-
-- `prepare_figshare_crosswell_dataset.py`: converts downloaded Figshare CSV files into a standard external CSV.
-- `audit_external_welllog_dataset.py`: checks whether a CSV has well, depth, label, and log columns.
-- `run_external_dataset_gate.py`: audits an external CSV and launches the generic external runner if the schema is valid.
-- `spatial_multimethod_group_benchmark.py`: FORCE loader, feature construction, well split, and conventional baselines.
-
-`util/` contains reusable metric, selective-release, feature-processing, and diagnostic plotting utilities.
-
-- `selective_multimethod_lithofacies.py`: selective-release metrics and posterior utilities.
-- `spatial_lithofacies_feature_ablation_smote.py`: feature selection and SMOTE-related helpers.
-- `spatial_lithofacies_feature_view_fusion.py`: feature-view fusion helpers.
-- `plot_test_results.py`: creates diagnostic test figures from summary CSV files.
-- `benchmark_inference.py`: measures release-score and accepted-set selection throughput from synthetic posterior arrays.
-
-`results/` contains small example summary files used by `test.py --plot-only`. Full training runs write new CSV files here by default. These files are algorithm outputs and diagnostic inputs.
-
-`test_figures/` is the default output directory for diagnostic test figures.
-
-`readme_assets/` contains representative images used in this README.
+- `train.py`: main command-line entry point for FORCE, Figshare, and external CSV workflows.
+- `test.py`: creates diagnostic release-curve figures from saved result summaries.
+- `verify_results.py`: checks packaged result summaries and required coverages.
+- `model/`: ProfileAnchor-Seq and comparison algorithms.
+- `data/`: dataset preparation, schema checks, FORCE loading, and well-level split utilities.
+- `util/`: selective-release metrics, feature utilities, plotting, and inference benchmarking.
+- `results/`: compact result summaries used for verification and plotting examples.
+- `readme_assets/`: images used by this README.
 
 ## Datasets
 
-### FORCE 2020
+FORCE 2020:
 
 - GitHub: `https://github.com/bolgebrygg/Force-2020-Machine-Learning-competition`
 - Zenodo: `https://doi.org/10.5281/zenodo.4351156`
-- Default local path used by the scripts: `datasets/force2020`
+- Expected local path: `datasets/force2020`
 - Required file: `train.csv`
 
-### Figshare Cross-Well Lithology Identification
+Figshare Cross-Well Lithology Identification:
 
 - DOI: `https://doi.org/10.6084/m9.figshare.6667646.v1`
-- Expected raw path: `datasets/external_raw/figshare_crosswell_6667646`
-- Expected processed CSV: `datasets/external_processed/figshare_crosswell_6667646/figshare_crosswell_standard.csv`
+- Raw path: `datasets/external_raw/figshare_crosswell_6667646`
+- Processed CSV: `datasets/external_processed/figshare_crosswell_6667646/figshare_crosswell_standard.csv`
 
-Build the processed Figshare CSV after downloading the raw files:
+Prepare the Figshare CSV after downloading the raw files:
 
 ```bash
 python data/prepare_figshare_crosswell_dataset.py
 ```
 
-The processed external CSV should contain a well ID column, a depth column, a lithology label column, and conventional log curves such as `GR`, `AC`, `DEN`, `PEF`, `LLD`, `LLS`, `SP`, and `CALI`.
+A generic external CSV should contain a well ID column, a depth column, a lithology label column, and conventional log curves. The schema checker reports whether the file can be used by the external runner:
 
-## Training
+```bash
+python data/audit_external_welllog_dataset.py /path/to/external_lithology.csv
+```
 
-Run the FORCE ProfileAnchor-Seq training and evaluation pipeline:
+## Training the Main Method
+
+Run the FORCE ProfileAnchor-Seq workflow:
 
 ```bash
 python train.py --dataset force
@@ -137,22 +102,25 @@ python train.py --dataset force
 Pass model-specific arguments after `--`:
 
 ```bash
-python train.py --dataset force -- --seeds 0 1 2 --coverages 0.01 0.02 0.05 0.10 0.20
+python train.py --dataset force -- \
+  --data-dir datasets/force2020 \
+  --seeds 0 1 2 \
+  --coverages 0.01 0.02 0.05 0.10 0.20
 ```
 
-Run the Figshare external pipeline:
+Run the Figshare workflow:
 
 ```bash
 python train.py --dataset figshare \
   --csv datasets/external_processed/figshare_crosswell_6667646/figshare_crosswell_standard.csv
 ```
 
-Audit and run a new external dataset:
+Run a generic external dataset:
 
 ```bash
 python train.py --dataset external \
   --csv /path/to/external_lithology.csv \
-  --dataset-name new_external
+  --dataset-name external_case
 ```
 
 Audit only:
@@ -160,19 +128,19 @@ Audit only:
 ```bash
 python train.py --dataset external \
   --csv /path/to/external_lithology.csv \
-  --dataset-name new_external \
+  --dataset-name external_case \
   --audit-only
 ```
 
-## Testing and Figures
+## Testing and Diagnostic Figures
 
-Generate diagnostic test figures from saved result summary CSV files:
+Generate diagnostic figures from packaged result summaries:
 
 ```bash
 python test.py --plot-only
 ```
 
-Use explicit output paths:
+Use explicit paths:
 
 ```bash
 python test.py --plot-only \
@@ -189,88 +157,101 @@ test_figures/figshare_test_release_curves.pdf
 test_figures/figshare_test_release_curves.png
 ```
 
-This command uses the small example summaries under `results/` and writes PDF/PNG figures under `test_figures/`.
-
-## Engineering Check
-
-Measure the inference-side release scoring cost with synthetic posterior arrays:
+Check packaged results:
 
 ```bash
-python util/benchmark_inference.py \
-  --intervals 5000 20000 50000 \
-  --classes 12 \
-  --anchors 5 \
-  --coverage 0.05 \
-  --repeats 5
+python verify_results.py
 ```
 
-The command writes `results/inference_benchmark.json` and `results/inference_benchmark.csv`. It measures posterior coupling, anchor-consensus scoring, percentile ranking, and accepted-set selection. It does not train models.
+## Running Comparison Methods
 
-## Reproduced Comparison Runs
+Use the same dataset path, seed list, and coverage grid when comparing methods. The standard coverage grid is:
 
-FORCE conventional and selective baselines:
+```text
+0.01 0.02 0.03 0.05 0.08 0.10 0.20 0.30 0.40 0.50
+```
+
+The main FORCE method runner:
 
 ```bash
-python util/selective_multimethod_lithofacies.py \
+python model/profile_anchor_reliability_geoshift_seq.py \
   --data-dir datasets/force2020 \
   --seeds 0 1 2 3 4 5 6 7 8 9 42 \
   --coverages 0.01 0.02 0.03 0.05 0.08 0.10 0.20 0.30 0.40 0.50
 ```
 
-FORCE STNet-like baseline:
+Conventional and selective baselines:
+
+```bash
+python util/selective_multimethod_lithofacies.py \
+  --data-dir datasets/force2020 \
+  --max-rows-per-well 800 \
+  --seeds 0 1 2 3 4 5 6 7 8 9 42 \
+  --coverages 0.01 0.02 0.03 0.05 0.08 0.10 0.20 0.30 0.40 0.50
+```
+
+STNet-like baselines:
 
 ```bash
 python model/spatial_lithofacies_stnet_like.py \
   --data-dir datasets/force2020 \
+  --max-rows-per-well 800 \
   --seeds 0 1 2 3 4 5 6 7 8 9 42 \
   --window 31 \
   --epochs 8 \
   --batch-size 512
-```
 
-FORCE STNet view-fusion baseline:
-
-```bash
 python model/spatial_lithofacies_stnet_view_fusion.py \
   --data-dir datasets/force2020 \
+  --max-rows-per-well 800 \
   --seeds 0 1 2 3 4 5 6 7 8 9 42 \
   --window 31 \
   --epochs 8 \
   --batch-size 512
 ```
 
-For a quick smoke run, reduce the seed list to `--seeds 0 1 2`. The reported comparisons use the 11-seed complete-well protocol shown above.
-
-Recent lithology baselines from the 2024--2026 literature are reproduced as comparable source-only implementations on the same FORCE complete-well splits. These commands do not import cross-paper metrics; they train each method family on the same source wells and rank target intervals by posterior margin at the same accepted coverages.
-
-Attention CNN baseline:
+Recent lithology-model families are run with `model/recent_lithology_baselines.py`:
 
 ```bash
 python model/recent_lithology_baselines.py \
   --model att_cnn \
   --data-dir datasets/force2020 \
+  --max-rows-per-well 800 \
   --seeds 0 1 2 3 4 5 6 7 8 9 42 \
   --coverages 0.01 0.02 0.03 0.05 0.08 0.10 0.20 0.30 0.40 0.50
 ```
 
-Recurrent Transformer baseline:
+Supported `--model` values include:
 
-```bash
-python model/recent_lithology_baselines.py \
-  --model recurrent_transformer \
-  --data-dir datasets/force2020 \
-  --seeds 0 1 2 3 4 5 6 7 8 9 42 \
-  --coverages 0.01 0.02 0.03 0.05 0.08 0.10 0.20 0.30 0.40 0.50
+```text
+att_cnn
+recurrent_transformer
+reformer
+adaboost_transformer
+mrssl
+geology_hybrid
+drsn_gaf
+sva_tcn
+cwscf
+ssdra
+serial_ensemble
+lmafnet
+multimodel_fusion
+mffcnn
+ddpm_mscnn
 ```
 
-Diffusion-augmented multiscale CNN baseline:
+Other comparison runners:
 
 ```bash
-python model/recent_lithology_baselines.py \
-  --model ddpm_mscnn \
-  --data-dir datasets/force2020 \
-  --seeds 0 1 2 3 4 5 6 7 8 9 42 \
-  --coverages 0.01 0.02 0.03 0.05 0.08 0.10 0.20 0.30 0.40 0.50
+python model/integrated_logging_features_baseline.py --data-dir datasets/force2020
+python model/meta_information_tensor_baseline.py --data-dir datasets/force2020
+python model/deepforest_kmeans_smote_baseline.py --data-dir datasets/force2020
+python model/recent_graph_attention_baseline.py --data-dir datasets/force2020
+python model/graph_feature_extraction_baseline.py --data-dir datasets/force2020
+python model/recent_mscgan_baseline.py --data-dir datasets/force2020
+python model/recent_drf_de_baseline.py --data-dir datasets/force2020
+python model/recent_pdsmvknn_baseline.py --data-dir datasets/force2020
 ```
 
 Figshare structural baselines:
@@ -283,48 +264,18 @@ python model/figshare_structural_external_baselines.py \
   --coverages 0.01 0.03 0.05 0.08 0.10 0.20 0.40
 ```
 
-## Direct Method Runners
-
-FORCE main runner:
-
-```bash
-python model/profile_anchor_reliability_geoshift_seq.py --help
-```
-
-Figshare ProfileAnchor runner:
-
-```bash
-python model/external_geoshift_rba_fixed_runner.py \
-  datasets/external_processed/figshare_crosswell_6667646/figshare_crosswell_standard.csv
-```
-
-## Outputs
-
-Default training outputs are written under `results/`:
-
-```text
-*_summary.csv
-*_paired.csv
-*_manifest.csv
-```
-
-Default diagnostic figures are written under `test_figures/`:
-
-```text
-force_test_release_curves.pdf
-force_test_release_curves.png
-figshare_test_release_curves.pdf
-figshare_test_release_curves.png
-```
-
 ## Correctness Checks
 
-Run the checks below after installation. They verify that the Python modules compile, imports resolve, saved result summaries are readable, and diagnostic figures can be generated from the packaged example outputs.
-
-Check imports and syntax:
+Compile Python files:
 
 ```bash
 python -m compileall .
+```
+
+Run result integrity checks:
+
+```bash
+python verify_results.py
 ```
 
 Check figure generation:
@@ -333,13 +284,20 @@ Check figure generation:
 python test.py --plot-only
 ```
 
-Check the recent-baseline model definitions without downloading FORCE:
+Run baseline self-checks that do not require FORCE:
 
 ```bash
+python model/integrated_logging_features_baseline.py --self-check
+python model/recent_drf_de_baseline.py --self-check
+python model/deepforest_kmeans_smote_baseline.py --self-check
+python model/meta_information_tensor_baseline.py --self-check
+python model/graph_feature_extraction_baseline.py --self-check
 python model/recent_lithology_baselines.py --self-check
+python model/recent_graph_attention_baseline.py --self-check
+python model/recent_mscgan_baseline.py --self-check
 ```
 
-Check the inference benchmark on a small synthetic case without overwriting packaged benchmark files:
+Measure release-score throughput on synthetic posterior arrays:
 
 ```bash
 python util/benchmark_inference.py \
@@ -352,4 +310,43 @@ python util/benchmark_inference.py \
   --out-csv test_figures/inference_benchmark_smoke.csv
 ```
 
-For full numerical reproduction, download the datasets listed above and run the training and comparison commands with the stated well-level splits, seeds, and accepted coverages.
+## File Summary
+
+Main method:
+
+- `model/profile_anchor_reliability_geoshift_seq.py`
+
+External-data runners:
+
+- `model/external_geoshift_rba_fixed_runner.py`
+- `model/external_reliability_budget_anchor_runner.py`
+- `model/external_welllog_profile_anchor_runner.py`
+- `data/run_external_dataset_gate.py`
+
+Comparison methods:
+
+- `util/selective_multimethod_lithofacies.py`
+- `model/spatial_lithofacies_selective_geoshift_seq.py`
+- `model/spatial_lithofacies_stnet_like.py`
+- `model/spatial_lithofacies_stnet_view_fusion.py`
+- `model/spatial_lithofacies_tree_stnet_posterior_fusion.py`
+- `model/spatial_tree_smote_aligned_lithofacies.py`
+- `model/recent_lithology_baselines.py`
+- `model/recent_graph_attention_baseline.py`
+- `model/recent_mscgan_baseline.py`
+- `model/recent_drf_de_baseline.py`
+- `model/recent_pdsmvknn_baseline.py`
+- `model/deepforest_kmeans_smote_baseline.py`
+- `model/graph_feature_extraction_baseline.py`
+- `model/integrated_logging_features_baseline.py`
+- `model/meta_information_tensor_baseline.py`
+
+Utilities:
+
+- `data/spatial_multimethod_group_benchmark.py`
+- `data/prepare_figshare_crosswell_dataset.py`
+- `data/audit_external_welllog_dataset.py`
+- `util/spatial_lithofacies_feature_ablation_smote.py`
+- `util/spatial_lithofacies_feature_view_fusion.py`
+- `util/plot_test_results.py`
+- `util/benchmark_inference.py`

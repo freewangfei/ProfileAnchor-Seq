@@ -1,6 +1,7 @@
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 import pandas as pd
@@ -28,9 +29,16 @@ RENAME = {
 
 
 def main() -> None:
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--raw-dir", type=Path, default=RAW_DIR)
+    parser.add_argument("--out-csv", type=Path, default=OUT_CSV)
+    parser.add_argument("--summary-csv", type=Path, default=SUMMARY_CSV)
+    args = parser.parse_args()
+
+    args.out_csv.parent.mkdir(parents=True, exist_ok=True)
+    args.summary_csv.parent.mkdir(parents=True, exist_ok=True)
     frames = []
-    for path in sorted(RAW_DIR.glob("*.csv")):
+    for path in sorted(args.raw_dir.glob("*.csv")):
         if path.name.startswith("figshare_"):
             continue
         df = pd.read_csv(path).rename(columns=RENAME)
@@ -38,7 +46,7 @@ def main() -> None:
         df["DEPTH_MD"] = 0.5 * (df["TOP_DEPTH"] + df["BOT_DEPTH"])
         frames.append(df)
     if not frames:
-        raise FileNotFoundError(f"No raw CSV files found in {RAW_DIR}")
+        raise FileNotFoundError(f"No raw CSV files found in {args.raw_dir}")
 
     out = pd.concat(frames, ignore_index=True)
     cols = [
@@ -57,7 +65,7 @@ def main() -> None:
         "LITHOLOGY",
     ]
     out = out[cols].sort_values(["WELL", "DEPTH_MD"]).reset_index(drop=True)
-    out.to_csv(OUT_CSV, index=False)
+    out.to_csv(args.out_csv, index=False)
 
     per_well = out.groupby("WELL").agg(rows=("WELL", "size"), top=("DEPTH_MD", "min"), bottom=("DEPTH_MD", "max"))
     label_counts = out["LITHOLOGY"].value_counts().rename_axis("lithology").reset_index(name="rows")
@@ -70,8 +78,8 @@ def main() -> None:
         {"item": "median_rows_per_well", "value": float(per_well["rows"].median())},
         {"item": "label_counts", "value": label_counts.to_dict(orient="records")},
     ]
-    pd.DataFrame(summary_rows).to_csv(SUMMARY_CSV, index=False)
-    print(f"Wrote {OUT_CSV} ({len(out)} rows, {out['WELL'].nunique()} wells)")
+    pd.DataFrame(summary_rows).to_csv(args.summary_csv, index=False)
+    print(f"Wrote {args.out_csv} ({len(out)} rows, {out['WELL'].nunique()} wells)")
     print(pd.DataFrame(summary_rows).to_string(index=False))
 
 
